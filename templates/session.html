@@ -1,0 +1,98 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+    <link type="text/css" rel="stylesheet" href="/static/css/bootstrap.css" />
+    <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+    <script type="text/javascript" src="/static/js/bootstrap.min.js"></script>
+    <title></title>
+</head>
+<body id="{{ session.key.id }}">
+<div class="container" style="margin-bottom: 50px;">
+    <div class="navbar">
+        <div class="navbar-inner">
+            <a class="brand" href="#">SJSU Riot</a>
+            <ul class="nav">
+                <li><a href="/">Home</a></li>
+                <li><a href="/sessions">Sessions</a></li>
+                <li><a href="/session/new">New Session</a></li>
+                <li><a href="/interactions">Interactions</a></li>
+            </ul>
+        </div>
+    </div>
+
+    {% if session %}
+        <h3>Session: {{ session.observee }} - {{ session.date }}</h3>
+    <div align="center" style="margin-bottom: 20px;">
+        <button type="button" id="endSessionBtn" class="btn btn-primary">End Session</button>
+    </div>
+
+    <div id="interactionSection">
+        {% if interactions %}
+            {% for interaction in interactions %}
+                <div class="well" style="margin-top: 40px;">
+                    <h4>{{ interaction.group.name }}</h4>
+                </div>
+            {% if interaction.items %}
+                <div id="interactionItems">
+                    {% for item in interaction.items %}
+                        <button type="button" class="btn btn-small btn-success" groupId="{{interaction.group.key.id}}" itemId="{{item.key.id}}">{{ item.name }}</button>
+                    {% endfor %}
+                </div>
+                {% else %}
+                    <div>no interaction items for this group</div>
+            {% endif %}
+            {% endfor %}
+            {% else %}
+            <h4>You have no interactions</h4>
+        {% endif %}
+    </div>
+    {% else %}
+        <h2>No Session with given id</h2>
+    {% endif %}
+</div>
+</body>
+
+<script type="text/javascript">
+    $('document').ready(function() {
+        var sessionId = $('body').attr('id');
+        $('#interactionSection .btn').click(function() {
+            var $this = $(this);
+            var groupId = $this.attr('groupId');
+            var itemId = $this.attr('itemId');
+            if($this.hasClass('btn-success')) {
+                $('#interactionSection .btn-danger').each(function() {
+                    $(this).removeClass('.btn-danger').addClass('btn-success');
+                });
+                // activate record
+                $.ajax({
+                    url: "/session/record/" + sessionId,
+                    type: "POST",
+                    data: { "groupId": groupId, "itemId": itemId},
+                    dataType: "json"
+                });
+                $this.removeClass('btn-success').addClass('btn-danger');
+            } else if($this.hasClass('btn-danger')) {
+                // stop session record
+                $.ajax({
+                   url: "/session/stop/" + sessionId,
+                   type: "POST",
+                   dataType: "json"
+                 });
+                $this.removeClass('btn-danger').addClass('btn-success');
+            }
+        });
+
+        $('#endSessionBtn').click(function() {
+            // stop sessions
+            $.ajax({
+                url: "/session/stop/" + sessionId,
+                type: "POST",
+                dataType: "json"
+            }).done(function(data) {
+                window.location.href = "/session/records/" + sessionId;
+            });
+        });
+    });
+</script>
+</html>
